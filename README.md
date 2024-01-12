@@ -209,8 +209,9 @@ npx shadcn-ui@latest add separator
 
 - regarde le code pour le reste
 
+## 2- le footer
 
-
+(voir le code)
 
 
 
