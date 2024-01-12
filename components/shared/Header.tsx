@@ -7,7 +7,7 @@ import MobileNav from "@/components/shared/MobileNav"
 
 const Header = () => {
   return (
-    <header className="w-full border-b">
+    <header className="w-full border-b border-orange-600">
       <div className="wrapper flex items-center justify-between">
         <Link href="/" className="w-36">
           <Image src="/assets/images/logo.svg" alt="logo" width={128} height={38} />

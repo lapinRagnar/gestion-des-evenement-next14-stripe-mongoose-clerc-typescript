@@ -213,6 +213,9 @@ npx shadcn-ui@latest add separator
 
 (voir le code)
 
+## 3- le home page - le hero
+(voir le code)
+
 
 
 
