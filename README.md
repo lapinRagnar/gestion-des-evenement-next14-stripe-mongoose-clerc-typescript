@@ -217,7 +217,74 @@ npx shadcn-ui@latest add separator
 (voir le code)
 
 
-# le backend && database
+# III- le backend && database
+
+## 1- mongoose - ORM pour se connecter au database
+https://mongoosejs.com/
+
+- command :
+```
+npm i mongoose mongodb
+```
+
+- créer le fichier : app/lib/mongoDb/database/index.ts
+- cette technique est utilisé dans tous les applications Node.js => technique de cache
+
+> app/lib/mongoDb/database/index.ts
+```
+import mongoose from 'mongoose';
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+let cached = (global as any).mongoose || { conn: null, promise: null };
+
+export const connectToDatabase = async () => {
+  if (cached.conn) return cached.conn;
+
+  if(!MONGODB_URI) throw new Error('MONGODB_URI is missing');
+
+  cached.promise = cached.promise || mongoose.connect(MONGODB_URI, {
+    dbName: 'evently',
+    bufferCommands: false,
+  })
+
+  cached.conn = await cached.promise;
+
+  return cached.conn;
+}
+
+```
+
+- se connecter au mongodb atlas et creer un compte
+- on creer un nouveau projet 👍
+  ![Alt text](images-pour-readme/cree-projet-mongodb.png)
+  ![Alt text](images-pour-readme/cree-projet-mongodb2.png)
+- on va dans database, et on cree un database:
+  ![Alt text](images-pour-readme/cree-projet-mongodb3.png)
+- on choisit FREE :
+  ![Alt text](images-pour-readme/cree-projet-mongodb4.png)
+
+- creer un username et password, copie le dans le .env
+- et puis suivre la suite et voila! braaaaavooo!
+
+- le nom de notre database est : EvenementsSiteWeb
+
+- ensuite va dans Network Access, puis Add Address IP, puis allow access from anywhere
+![Alt text](images-pour-readme/cree-projet-mongodb5.png)
+
+- puis dans overview, puis connect : 
+![Alt text](images-pour-readme/cree-projet-mongodb6.png)
+
+- puis, dans le driver, puis copier l'url :mongodb+srv://lapinragnar:<password>@cluster0.59ojkj5.mongodb.net/?retryWrites=true&w=majority dans le .env
+
+![Alt text](images-pour-readme/cree-projet-mongodb7.png)
+
+- et coler dans .env et mettre l'username et password : 
+
+```
+MONGODB_URI=mongodb+srv://lapinragnar:<password>@cluster0.59ojkj5.mongodb.net/?retryWrites=true&w=majority
+```
+
 
 
 
