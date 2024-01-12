@@ -965,3 +965,4 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 # le demo - site publié sur vercel
 https://gestion-des-evenement-next14-stripe-mongoose-clerc-typescript.vercel.app/
 
+dep
