@@ -1,36 +1,245 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+# I- primo
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## les etapes de l'installation
+## 1. next
+```
+pnpx create-next-app@latest 
+```
+puis suivre le prompt
+## 2. shadcn ui
+```
+pnpm dlx shadcn-ui@latest init
+```
+puis suivre le prompt
+
+## 3. configurer globals.css 
+(voir le code )
+## 4. configurer tailwind (tailwind.config.ts) et uploadthing pour l'upload file
+- uploadthing : upload file for nextjs easily
+https://uploadthing.com/
+command line 
+```
+pnpm add uploadthing @uploadthing/react
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- tailwind.config.ts
+(voir le code ) et les commandes sont:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> tailwind.config.ts
+```
+import { withUt } from "uploadthing/tw";
+ 
+export default withUt({
+  // Your existing Tailwind config
+  content: ["./src/**/*.{ts,tsx,mdx}"],
+  ...
+});
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## 5- routes && file structure
 
-## Learn More
+![Alt text](image-pour-readme/image.png)
 
-To learn more about Next.js, take a look at the following resources:
+## 6- Header
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### a- cree un compte clerk sur leur site
+- copier les variables d'environnement dans
+> .env.local
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=[votre clé]
+CLERK_SECRET_KEY=[votre clé]
+```
+#### b- install clerk
+```
+pnpm add @clerk/nextjs
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+#### c- wrap ton app avec le <ClerkProvider>
+> app\(root)\layout.tsx
+```
+import { ClerkProvider } from '@clerk/nextjs'
+import './globals.css'
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <ClerkProvider>
+      <html lang="en">
+        <body>{children}</body>
+      </html>
+    </ClerkProvider>
+  )
+}
+```
 
-## Deploy on Vercel
+#### d- le middleware 
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+> app/middleware.ts
+```
+import { authMiddleware } from "@clerk/nextjs";
+ 
+// This example protects all routes including api/trpc routes
+// Please edit this to allow other routes to be public as needed.
+// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
+export default authMiddleware({});
+ 
+export const config = {
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+};
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+```
+
+quand on se connecte sur localhost:3000, on est redirige vers /sign-in maintenant
+
+## 6 - suite header
+- ajouter le bouton <SignedOut> de clerk
+- on cree app/(auth)/sign-in/[[...sign-in]]/page.tsx
+
+> app/(auth)/sign-in/[[...sign-in]]/page.tsx
+```
+import { SignIn } from "@clerk/nextjs";
+
+export default function Page() {
+  return <SignIn />
+}
+```
+
+- on cree app\(auth)\sign-up\[[...sign-up]]\page.tsx
+
+> app/(auth)/sign-up/[[...sign-up]]/page.tsx
+```
+import { SignUp } from "@clerk/nextjs";
+
+export default function Page() {
+  return <SignUp />
+}
+
+```
+
+- on ajoute : 
+
+```
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+
+```
+
+- on ajoute un layout 👍 dans (auth)
+> app/(auth)/layout.tsx
+```
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="flex-center min-h-screen flex-col w-full bg-stone-800 bg-dotted-pattern bg-cover bg-fixed bg-center">
+      {children}
+    </div>
+  )
+}
+
+export default Layout
+```
+
+- mettre username dans le formulaire le sign-in et le sign-up
+  
+  ![Alt text](/image-pour-readme/image2.png)
+
+
+- dans le header, ajouter le  <SignedIn> de clerk
+
+> app/components/shared/Header.tsx
+```
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+...
+..
+<SignedIn>
+  <UserButton afterSignOutUrl="/" />
+</SignedIn>
+
+
+```
+
+=> Après ça, on peut se connecter sur localhost:3000/sign-in
+=> et tout fonctionne, Bravooooo!
+
+
+
+# II- la suite
+
+## 1- la navbar du mobile
+- creer un <NavItems /> en dessous du <UserButton afterSignOutUrl="/" />
+  > app/components\shared\Header.tsx
+ 
+  ```
+
+  import NavItems from "@/components/shared/NavItems"
+
+  const Header = () => {
+    ....
+      <SignedIn>
+        <UserButton afterSignOutUrl="/" />
+        <NavItems />
+      </SignedIn>
+    .....
+  }
+
+  export default Header
+  ```
+
+- on cree le : /components/shared/NavItems.tsx"
+- regarde le code pour la suite
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## le tuto
+https://www.youtube.com/watch?v=zgGhzuBZOQg
+https://github.com/adrianhajdin/event_platform
+
+
+### variables d'environnement
+```
+#NEXT
+NEXT_PUBLIC_SERVER_URL=
+
+#CLERK
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_CLERK_WEBHOOK_SECRET=
+
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+
+#MONGODB
+MONGODB_URI=
+
+#UPLOADTHING
+UPLOADTHING_SECRET=
+UPLOADTHING_APP_ID=
+
+#STRIPE
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+```
