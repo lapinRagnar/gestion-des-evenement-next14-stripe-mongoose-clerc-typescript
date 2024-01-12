@@ -219,7 +219,7 @@ npx shadcn-ui@latest add separator
 
 # III- le backend && database
 
-## 1- mongoose - ORM pour se connecter au database
+## 1. mongoose - ORM pour se connecter au database
 https://mongoosejs.com/
 
 - command :
@@ -279,13 +279,13 @@ export const connectToDatabase = async () => {
 
 ![Alt text](images-pour-readme/cree-projet-mongodb7.png)
 
-- et coler dans .env et mettre l'username et password : 
+- et coler dans .env.local et mettre l'username et password : 
 
 ```
 MONGODB_URI=mongodb+srv://lapinragnar:<password>@cluster0.59ojkj5.mongodb.net/?retryWrites=true&w=majority
 ```
 
-## 2- création des models
+## 2. création des models
 
 - on crée le fichier pour User : app/lib/mongoDb/models/user.model.ts
 - et le code suivant 🥈:
@@ -432,6 +432,445 @@ export default Category;
 
 
 ```
+
+
+## 3. creation des fonctions qui va nous permettre de se connecter au database et d'utiliser les models
+
+- le webhook (clerk) : quand clerc cree un user, on se synchronise avec le database
+- la doc : https://clerk.com/docs/users/sync-data#sync-clerk-data-to-your-backend-with-webhooks
+
+
+![Alt text](images-pour-readme/webhook.png)
+
+- activer le webhook sur clerk: on fait, add Endpoint
+  
+![Alt text](images-pour-readme/webhook2.png)
+
+
+
+> ***les etapes de l'installation***
+a- Install the svix package
+```
+npm install svix
+```
+
+b- Create the endpoint in your application
+
+on cree le fichier
+
+> app/api/webhooks/route.ts
+```
+
+
+
+```
+
+on cree l'action : createUser dans 
+> lib\actions\user.action.ts
+
+
+
+```
+
+import { Webhook } from 'svix'
+import { headers } from 'next/headers'
+import { WebhookEvent } from '@clerk/nextjs/server'
+import { createUser, deleteUser, updateUser } from '@/lib/actions/user.action'
+import { clerkClient } from '@clerk/nextjs'
+import { NextResponse } from 'next/server'
+ 
+export async function POST(req: Request) {
+ 
+  // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
+ 
+  if (!WEBHOOK_SECRET) {
+    throw new Error('Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local')
+  }
+ 
+  // Get the headers
+  const headerPayload = headers();
+  const svix_id = headerPayload.get("svix-id");
+  const svix_timestamp = headerPayload.get("svix-timestamp");
+  const svix_signature = headerPayload.get("svix-signature");
+ 
+  // If there are no headers, error out
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return new Response('Error occured -- no svix headers', {
+      status: 400
+    })
+  }
+ 
+  // Get the body
+  const payload = await req.json()
+  const body = JSON.stringify(payload);
+ 
+  // Create a new Svix instance with your secret.
+  const wh = new Webhook(WEBHOOK_SECRET);
+ 
+  let evt: WebhookEvent
+ 
+  // Verify the payload with the headers
+  try {
+    evt = wh.verify(body, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    }) as WebhookEvent
+  } catch (err) {
+    console.error('Error verifying webhook:', err);
+    return new Response('Error occured', {
+      status: 400
+    })
+  }
+ 
+  // Get the ID and type
+  const { id } = evt.data;
+  const eventType = evt.type;
+
+  if (eventType === 'user.created') {
+
+    const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
+
+
+    const user = {
+      clerkId: id,
+      email: email_addresses[0].email_address,
+      username: username!,
+      firstName: first_name,
+      lastName: last_name,
+      photo: image_url,
+    }
+
+
+    const newUser = await createUser(user);
+
+    if(newUser) {
+      await clerkClient.users.updateUserMetadata(id, {
+        publicMetadata: {
+          userId: newUser._id
+        }
+      })
+    }
+
+    return NextResponse.json({ message: 'OK', user: newUser })
+  
+  }
+
+
+  if (eventType === 'user.updated') {
+    const {id, image_url, first_name, last_name, username } = evt.data
+
+    const user = {
+      firstName: first_name,
+      lastName: last_name,
+      username: username!,
+      photo: image_url,
+    }
+
+    const updatedUser = await updateUser(id, user)
+
+    return NextResponse.json({ message: 'OK', user: updatedUser })
+  }
+
+  if (eventType === 'user.deleted') {
+    const { id } = evt.data
+
+    const deletedUser = await deleteUser(id!)
+
+    return NextResponse.json({ message: 'OK', user: deletedUser })
+  }
+
+
+ 
+  console.log(`Webhook with and ID of ${id} and type of ${eventType}`)
+  console.log('Webhook body:', body)
+ 
+  return new Response('', { status: 200 })
+}
+ 
+
+
+
+```
+
+
+on cree le type dans 
+
+> app/types/index.ts
+
+```
+// ====== USER PARAMS
+export type CreateUserParams = {
+  clerkId: string
+  firstName: string
+  lastName: string
+  username: string
+  email: string
+  photo: string
+}
+
+export type UpdateUserParams = {
+  firstName: string
+  lastName: string
+  username: string
+  photo: string
+}
+
+// ====== EVENT PARAMS
+export type CreateEventParams = {
+  userId: string
+  event: {
+    title: string
+    description: string
+    location: string
+    imageUrl: string
+    startDateTime: Date
+    endDateTime: Date
+    categoryId: string
+    price: string
+    isFree: boolean
+    url: string
+  }
+  path: string
+}
+
+export type UpdateEventParams = {
+  userId: string
+  event: {
+    _id: string
+    title: string
+    imageUrl: string
+    description: string
+    location: string
+    startDateTime: Date
+    endDateTime: Date
+    categoryId: string
+    price: string
+    isFree: boolean
+    url: string
+  }
+  path: string
+}
+
+export type DeleteEventParams = {
+  eventId: string
+  path: string
+}
+
+export type GetAllEventsParams = {
+  query: string
+  category: string
+  limit: number
+  page: number
+}
+
+export type GetEventsByUserParams = {
+  userId: string
+  limit?: number
+  page: number
+}
+
+export type GetRelatedEventsByCategoryParams = {
+  categoryId: string
+  eventId: string
+  limit?: number
+  page: number | string
+}
+
+export type Event = {
+  _id: string
+  title: string
+  description: string
+  price: string
+  isFree: boolean
+  imageUrl: string
+  location: string
+  startDateTime: Date
+  endDateTime: Date
+  url: string
+  organizer: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  category: {
+    _id: string
+    name: string
+  }
+}
+
+// ====== CATEGORY PARAMS
+export type CreateCategoryParams = {
+  categoryName: string
+}
+
+// ====== ORDER PARAMS
+export type CheckoutOrderParams = {
+  eventTitle: string
+  eventId: string
+  price: string
+  isFree: boolean
+  buyerId: string
+}
+
+export type CreateOrderParams = {
+  stripeId: string
+  eventId: string
+  buyerId: string
+  totalAmount: string
+  createdAt: Date
+}
+
+export type GetOrdersByEventParams = {
+  eventId: string
+  searchString: string
+}
+
+export type GetOrdersByUserParams = {
+  userId: string | null
+  limit?: number
+  page: string | number | null
+}
+
+// ====== URL QUERY PARAMS
+export type UrlQueryParams = {
+  params: string
+  key: string
+  value: string | null
+}
+
+export type RemoveUrlQueryParams = {
+  params: string
+  keysToRemove: string[]
+}
+
+export type SearchParamProps = {
+  params: { id: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+```
+
+
+on cree une fonction pour gérer nos erreurs dans 👍
+
+> app/lib/utils.ts :
+
+il faut installer query-string :
+
+ ```
+ npm i query-string
+ ```
+
+puis, copier le code suivant dans app/lib/utils.ts
+
+```
+import { type ClassValue, clsx } from 'clsx'
+
+import { twMerge } from 'tailwind-merge'
+import qs from 'query-string'
+
+import { UrlQueryParams, RemoveUrlQueryParams } from '@/types'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export const formatDateTime = (dateString: Date) => {
+  const dateTimeOptions: Intl.DateTimeFormatOptions = {
+    weekday: 'short', // abbreviated weekday name (e.g., 'Mon')
+    month: 'short', // abbreviated month name (e.g., 'Oct')
+    day: 'numeric', // numeric day of the month (e.g., '25')
+    hour: 'numeric', // numeric hour (e.g., '8')
+    minute: 'numeric', // numeric minute (e.g., '30')
+    hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
+  }
+
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    weekday: 'short', // abbreviated weekday name (e.g., 'Mon')
+    month: 'short', // abbreviated month name (e.g., 'Oct')
+    year: 'numeric', // numeric year (e.g., '2023')
+    day: 'numeric', // numeric day of the month (e.g., '25')
+  }
+
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: 'numeric', // numeric hour (e.g., '8')
+    minute: 'numeric', // numeric minute (e.g., '30')
+    hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
+  }
+
+  const formattedDateTime: string = new Date(dateString).toLocaleString('en-US', dateTimeOptions)
+
+  const formattedDate: string = new Date(dateString).toLocaleString('en-US', dateOptions)
+
+  const formattedTime: string = new Date(dateString).toLocaleString('en-US', timeOptions)
+
+  return {
+    dateTime: formattedDateTime,
+    dateOnly: formattedDate,
+    timeOnly: formattedTime,
+  }
+}
+
+export const convertFileToUrl = (file: File) => URL.createObjectURL(file)
+
+export const formatPrice = (price: string) => {
+  const amount = parseFloat(price)
+  const formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount)
+
+  return formattedPrice
+}
+
+export function formUrlQuery({ params, key, value }: UrlQueryParams) {
+  const currentUrl = qs.parse(params)
+
+  currentUrl[key] = value
+
+  return qs.stringifyUrl(
+    {
+      url: window.location.pathname,
+      query: currentUrl,
+    },
+    { skipNull: true }
+  )
+}
+
+export function removeKeysFromQuery({ params, keysToRemove }: RemoveUrlQueryParams) {
+  const currentUrl = qs.parse(params)
+
+  keysToRemove.forEach(key => {
+    delete currentUrl[key]
+  })
+
+  return qs.stringifyUrl(
+    {
+      url: window.location.pathname,
+      query: currentUrl,
+    },
+    { skipNull: true }
+  )
+}
+
+export const handleError = (error: unknown) => {
+  console.error(error)
+  throw new Error(typeof error === 'string' ? error : JSON.stringify(error))
+}
+
+
+```
+
+
+
+# IV- deploiement
+
+- ojouter nouveau projet,
+- importer le projet du github
+- copier le .env
+
 
 
 
