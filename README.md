@@ -177,7 +177,7 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 
 # II- la suite
 
-## 1- la navbar du mobile
+## 1- la navbar du mobile et du header
 - creer un <NavItems /> en dessous du <UserButton afterSignOutUrl="/" />
   > app/components\shared\Header.tsx
  
@@ -199,6 +199,15 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 
 - on cree le : /components/shared/NavItems.tsx"
 - regarde le code pour la suite
+- install sheet de shadcn pour la bar de navigation à droite
+```
+npx shadcn-ui@latest add sheet
+npx shadcn-ui@latest add separator
+
+
+```
+
+- regarde le code pour le reste
 
 
 
