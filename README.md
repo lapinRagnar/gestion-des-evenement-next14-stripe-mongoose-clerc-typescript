@@ -449,12 +449,14 @@ export default Category;
 
 
 > ***les etapes de l'installation***
-a- Install the svix package
+
+
+### a- Install the svix package
 ```
 npm install svix
 ```
 
-b- Create the endpoint in your application
+### b- Create the endpoint in your application
 
 on cree le fichier
 
@@ -864,6 +866,52 @@ export const handleError = (error: unknown) => {
 ```
 
 
+### c- A faire après le deploiement sinon ca ne marche pas
+
+##### - ajouter un endpoint - Enable webhooks : https://gestion-des-evenement-next14-stripe-mongoose-clerc-typescript.vercel.app/api/webhook/clerk
+
+
+![Alt text](images-pour-readme/webhook3.png)
+
+- ensuite cocher user comme ceci:
+
+
+![Alt text](images-pour-readme/webhook4.png)
+
+
+- puis cliquer sur créer
+
+- puis copier le signing secret:
+
+![Alt text](images-pour-readme/webhook5.png)
+
+- et le mettre dans le .env
+
+> .env
+```
+WEBHOOK_SECRET="copier le code ici"
+```
+
+NB: Il faut aussi mettre cette clé dans vercel variable d'environnement
+
+ici : 
+![Alt text](images-pour-readme/webhook6.png)
+
+
+*** <font color='red'> TRES IMPORTANT : IL FAUT REDEPLOYER l'application sur vercel pour mettre à jour les variables d'environnement </font>***
+
+
+- on supprime l'user qu'on a crée dans clerk
+
+- maintenant on test sur notre localhost:3000 de créer un nouvel user et on verifie si l'user est ajouté aussi dans la base de donnée mongodb
+
+
+
+
+
+
+
+
 
 # IV- deploiement
 
@@ -909,3 +957,11 @@ STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 ```
+
+
+
+
+
+# le demo - site publié sur vercel
+https://gestion-des-evenement-next14-stripe-mongoose-clerc-typescript.vercel.app/
+
