@@ -285,14 +285,153 @@ export const connectToDatabase = async () => {
 MONGODB_URI=mongodb+srv://lapinragnar:<password>@cluster0.59ojkj5.mongodb.net/?retryWrites=true&w=majority
 ```
 
+## 2- création des models
+
+- on crée le fichier pour User : app/lib/mongoDb/models/user.model.ts
+- et le code suivant 🥈:
+> app/lib/mongoDb/models/user.model.ts
+```
+import { Schema, model, models } from "mongoose";
+
+const UserSchema = new Schema({
+  clerkId: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
+  firstName: { type: String, required: true },
+  lastName: {type: String, required: true },
+  photo: { type: String, required: true },
+})
+
+const User = models.User || model('User', UserSchema);
+
+export default User;
+
+```
+
+- on fait la même chose pour le model event, order, category :
+
+> app/lib/mongoDb/models/event.model.ts
+
+```
+import { Document, Schema, model, models } from "mongoose";
+
+export interface IEvent extends Document {
+  _id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  createdAt: Date;
+  imageUrl: string;
+  startDateTime: Date;
+  endDateTime: Date;
+  price: string;
+  isFree: boolean;
+  url?: string;
+  category: { _id: string, name: string }
+  organizer: { _id: string, firstName: string, lastName: string }
+}
+
+const EventSchema = new Schema({
+  title: { type: String, required: true },
+  description: { type: String },
+  location: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  imageUrl: { type: String, required: true },
+  startDateTime: { type: Date, default: Date.now },
+  endDateTime: { type: Date, default: Date.now },
+  price: { type: String },
+  isFree: { type: Boolean, default: false },
+  url: { type: String },
+  category: { type: Schema.Types.ObjectId, ref: 'Category' },
+  organizer: { type: Schema.Types.ObjectId, ref: 'User' },
+})
+
+const Event = models.Event || model('Event', EventSchema);
+
+export default Event;
+
+```
 
 
+> app/lib/mongoDb/models/order.model.ts
+
+```
+import { Schema, model, models, Document } from 'mongoose'
+
+export interface IOrder extends Document {
+  createdAt: Date
+  stripeId: string
+  totalAmount: string
+  event: {
+    _id: string
+    title: string
+  }
+  buyer: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+}
+
+export type IOrderItem = {
+  _id: string
+  totalAmount: string
+  createdAt: Date
+  eventTitle: string
+  eventId: string
+  buyer: string
+}
+
+const OrderSchema = new Schema({
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  stripeId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  totalAmount: {
+    type: String,
+  },
+  event: {
+    type: Schema.Types.ObjectId,
+    ref: 'Event',
+  },
+  buyer: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+})
+
+const Order = models.Order || model('Order', OrderSchema)
+
+export default Order
+
+```
+
+> app/lib/mongoDb/models/category.model.ts
+
+```
+
+import { Document, Schema, model, models } from "mongoose";
+
+export interface ICategory extends Document {
+  _id: string;
+  name: string;
+}
+
+const CategorySchema = new Schema({
+  name: { type: String, required: true, unique: true },
+})
+
+const Category = models.Category || model('Category', CategorySchema);
+
+export default Category;
 
 
-
-
-
-
+```
 
 
 
