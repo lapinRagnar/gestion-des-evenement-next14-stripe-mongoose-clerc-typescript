@@ -11,6 +11,8 @@ puis suivre le prompt
 ## 2. shadcn ui
 ```
 pnpm dlx shadcn-ui@latest init
+npx shadcn-ui@latest init
+
 ```
 puis suivre le prompt
 
@@ -22,6 +24,8 @@ https://uploadthing.com/
 command line 
 ```
 pnpm add uploadthing @uploadthing/react
+npm install uploadthing @uploadthing/react
+
 ```
 
 - tailwind.config.ts
@@ -54,6 +58,7 @@ CLERK_SECRET_KEY=[votre clé]
 #### b- install clerk
 ```
 pnpm add @clerk/nextjs
+npm install @clerk/nextjs
 ```
 
 #### c- wrap ton app avec le <ClerkProvider>
