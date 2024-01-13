@@ -1420,7 +1420,41 @@ export default Dropdown
 ```
 
 
+### c. le champ description
 
+c'est un textarea, alors on install avec shadcn
+
+```console
+npx shadcn-ui@latest add textarea
+
+```
+
+il faut l'importer dans le EventForm
+
+components\shared\EventForm.tsx
+```
+import { Textarea } from "@/components/ui/textarea"
+
+```
+
+puis le reste du code est comme ceci:
+
+components\shared\EventForm.tsx
+```
+<FormField
+    control={form.control}
+    name="description"
+    render={({ field }) => (
+      <FormItem className="w-full">
+        <FormControl className="h-40">
+          <Textarea placeholder="Description" {...field} className="textarea rounded-2xl" />
+        </FormControl>
+
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+```
 
 
 
