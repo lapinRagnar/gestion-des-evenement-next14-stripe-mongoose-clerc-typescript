@@ -1456,16 +1456,253 @@ components\shared\EventForm.tsx
   />
 ```
 
+### d. le champ image
+
+on crée d'abord un composant FileUploader dans components\shared\FileUploader.tsx , puis l'importer dans le EventForm
+
+> components\shared\FileUploader.tsx
+```
+const FileUploader = () => {
+  return (
+    <div>FileUploader</div>
+  )
+}
+
+export default FileUploader
+```
 
 
 
+dans le form event, on importe FileUploader
+> components\shared\EventForm.tsx
+```
+import {FileUploader} from "@/components/shared/FileUploader"
+```
+
+puis on cree un state:
+
+> components\shared\FileUploader.tsx
+```
+import { useState } from "react"
+...
+...
+const [files, setFiles] = useState<File[]>([])
+
+```
+
+et on crée le champ image
+> components\shared\EventForm.tsx
+```
+<FormField
+  control={form.control}
+  name="imageUrl"
+  render={({ field }) => (
+    <FormItem className="w-full">
+      <FormControl className="h-40">
+        <FileUploader 
+          onFieldChange={field.onChange}
+          imageUrl={field.value}
+          setFiles={setFiles}
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
+```
+
+maintenant dans le FileUploader, on desctruct les props
+
+> components\shared\FileUploader.tsx
+```
+import { Dispatch } from "react"
+
+type FileUploaderProps = {
+  onFieldChange: () => void
+  imageUrl?: string
+  setFiles: Dispatch<React.SetStateAction<File[]>>
+}
+
+const FileUploader = ({ onFieldChange, imageUrl, setFiles }: FileUploaderProps) => {
+  return (
+    <div>FileUploader</div>
+  )
+}
+
+export default FileUploader
+```
+
+maintent c'est le moment d'implater l'uploader, on va utiliser la librairie uploadthing pour cela
+
+doc : https://uploadthing.com/
+
+on cree un nouvelle app : 
+![Alt text](images-pour-readme/uploadthing1.png)
+
+puis,
+
+![Alt text](images-pour-readme/uploadthing2.png)
+
+- installation de uploadthing 
+
+```console
+npm install uploadthing @uploadthing/react
+```
+
+- Add env variables :
+
+```
+UPLOADTHING_SECRET=... # A secret key for your app (starts with sk_live_)
+UPLOADTHING_APP_ID=... # Your app id
+```
+![Alt text](images-pour-readme/uploadthing3.png)
+
+- Set Up A FileRouter : 
+
+on cree le app/api/uploadthing/core.ts
+
+> app/api/uploadthing/core.ts
+```
+import { createUploadthing, type FileRouter } from "uploadthing/next";
+ 
+const f = createUploadthing();
+ 
+const auth = (req: Request) => ({ id: "fakeId" }); // Fake auth function
+ 
+// FileRouter for your app, can contain multiple FileRoutes
+export const ourFileRouter = {
+  // Define as many FileRoutes as you like, each with a unique routeSlug
+  imageUploader: f({ image: { maxFileSize: "4MB" } })
+    // Set permissions and file types for this FileRoute
+    .middleware(async ({ req }) => {
+      // This code runs on your server before upload
+      const user = await auth(req);
+ 
+      // If you throw, the user will not be able to upload
+      if (!user) throw new Error("Unauthorized");
+ 
+      // Whatever is returned here is accessible in onUploadComplete as `metadata`
+      return { userId: user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // This code RUNS ON YOUR SERVER after upload
+      console.log("Upload complete for userId:", metadata.userId);
+ 
+      console.log("file url", file.url);
+ 
+      // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
+      return { uploadedBy: metadata.userId };
+    }),
+} satisfies FileRouter;
+ 
+export type OurFileRouter = typeof ourFileRouter;
+```
 
 
+- Create a Next.js API route using the FileRouter:
+> app/api/uploadthing/route.ts
+```
+import { createNextRouteHandler } from "uploadthing/next";
+ 
+import { ourFileRouter } from "./core";
+ 
+// Export routes for Next App Router
+export const { GET, POST } = createNextRouteHandler({
+  router: ourFileRouter,
+});
+
+```
 
 
+- Add UploadThing's Styles, ca on a deja fait au debut :
+
+> tailwind.config.ts
+```
+import { withUt } from "uploadthing/tw";
+ 
+export default withUt({
+  // Your existing Tailwind config
+  content: ["./src/**/*.{ts,tsx,mdx}"],
+  ...
+});
+```
 
 
+- Create The UploadThing Components (Recommended)
 
+> app\lib\uploadthing.ts
+```
+import { generateComponents } from "@uploadthing/react";
+ 
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
+ 
+export const { UploadButton, UploadDropzone, Uploader } =
+  generateComponents<OurFileRouter>();
+```
+
+- Mount A Dropzone Button And Upload :
+
+> components\shared\FileUploader.tsx
+```
+'use client'
+
+import { useCallback, Dispatch, SetStateAction } from 'react'
+import type { FileWithPath } from '@uploadthing/react'
+import { useDropzone } from '@uploadthing/react/hooks'
+import { generateClientDropzoneAccept } from 'uploadthing/client'
+
+import { Button } from '@/components/ui/button'
+import { convertFileToUrl } from '@/lib/utils'
+import Image from 'next/image'
+
+type FileUploaderProps = {
+  onFieldChange: (url: string) => void
+  imageUrl: string
+  setFiles: Dispatch<SetStateAction<File[]>>
+}
+
+export function FileUploader({ imageUrl, onFieldChange, setFiles }: FileUploaderProps) {
+  const onDrop = useCallback((acceptedFiles: FileWithPath[]) => {
+    setFiles(acceptedFiles)
+    onFieldChange(convertFileToUrl(acceptedFiles[0]))
+  }, [])
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: 'image/*' ? generateClientDropzoneAccept(['image/*']) : undefined,
+  })
+
+  return (
+    <div
+      {...getRootProps()}
+      className="flex-center bg-dark-3 flex h-72 cursor-pointer flex-col overflow-hidden rounded-xl bg-grey-50">
+      <input {...getInputProps()} className="cursor-pointer" />
+
+      {imageUrl ? (
+        <div className="flex h-full w-full flex-1 justify-center ">
+          <Image
+            src={imageUrl}
+            alt="image"
+            width={250}
+            height={250}
+            className="w-full object-cover object-center"
+          />
+        </div>
+      ) : (
+        <div className="flex-center flex-col py-5 text-grey-500">
+          <Image src="/assets/icons/upload.svg" width={77} height={77} alt="file upload" />
+          <h3 className="mb-2 mt-2">Drag photo here</h3>
+          <p className="p-medium-12 mb-4">SVG, PNG, JPG</p>
+          <Button type="button" className="rounded-full">
+            Select from computer
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+```
 
 
 

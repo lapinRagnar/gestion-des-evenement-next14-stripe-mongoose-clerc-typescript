@@ -22,6 +22,8 @@ import { eventFormSchema } from "@/lib/validator"
 import { eventDefaultValues } from "@/constants"
 import Dropdown from "@/components/shared/Dropdown"
 import { Textarea } from "@/components/ui/textarea"
+import {FileUploader} from "@/components/shared/FileUploader"
+import { useState } from "react"
 
 // 1. on fait ca pour la validation
 
@@ -32,6 +34,8 @@ type EventFormProps = {
 }
 
 const EventForm = ({ userId, type }: EventFormProps) => {
+
+  const [files, setFiles] = useState<File[]>([])
 
   // 2. Define your form.
   const initialValues = eventDefaultValues
@@ -96,10 +100,28 @@ const EventForm = ({ userId, type }: EventFormProps) => {
               name="description"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormControl className="h-40">
+                  <FormControl className="h-72">
                     <Textarea placeholder="Description" {...field} className="textarea rounded-2xl" />
                   </FormControl>
 
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormControl className="h-40">
+                    <FileUploader 
+                      onFieldChange={field.onChange}
+                      imageUrl={field.value}
+                      setFiles={setFiles}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
