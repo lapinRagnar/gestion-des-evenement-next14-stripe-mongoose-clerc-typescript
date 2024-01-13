@@ -1,9 +1,10 @@
 'use client'
 
 // 1. on fait ca
+import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import * as z from "zod"
+
 
 // 3.on install Button et Input. Et on importe comme ça
 import { Button } from "@/components/ui/button"
@@ -17,11 +18,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { eventFormSchema } from "@/lib/validator"
+import { eventDefaultValues } from "@/constants"
+import Dropdown from "@/components/shared/Dropdown"
 
-// 1. on fait ca
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-})
+// 1. on fait ca pour la validation
+
 
 type EventFormProps = {
   userId: string | null
@@ -31,15 +33,15 @@ type EventFormProps = {
 const EventForm = ({ userId, type }: EventFormProps) => {
 
   // 2. Define your form.
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: "",
-    },
+  const initialValues = eventDefaultValues
+
+  const form = useForm<z.infer<typeof eventFormSchema>>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: initialValues,
   })
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof eventFormSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values)
@@ -51,23 +53,46 @@ const EventForm = ({ userId, type }: EventFormProps) => {
 
     // 4. on dessine le formulaire
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input placeholder="shadcn" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+
+        <div className="flex flex-col gap-5 md:flex-row">
+
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormControl>
+                  <Input placeholder="Event title" {...field} className="input-field" />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormControl>
+                  <Dropdown onChangeHandler={field.onChange} value={field.value} />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+        </div>
+
+        <div className="flex flex-col gap-5 md:flex-row">
+
+
+        </div>
+
         <Button type="submit">Submit</Button>
       </form>
     </Form>

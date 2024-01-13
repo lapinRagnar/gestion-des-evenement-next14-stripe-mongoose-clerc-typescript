@@ -924,7 +924,7 @@ ici :
 
 # V- la page event - creation, modification, suppression d'un event 
 
-## 1- Create Event
+## 1- Create Event - les etapes de création de formulaire
 on crée la page : app/(root)/events/create/page.tsx
 
 avec le code suivant : 
@@ -1195,6 +1195,245 @@ const EventForm = ({ userId, type }: EventFormProps) => {
 
 export default EventForm
 ```
+
+
+## 2- validation du formulaire
+
+On va mettre notre validator dans un autre fichier et l'importer ensuite dans le EventForm.
+on crée le fichier : app/lib/validator.ts avec ce code :
+
+> app/lib/validator.ts 
+```
+import * as z from "zod"
+
+export const eventFormSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 characters'),
+  description: z.string().min(3, 'Description must be at least 3 characters').max(400, 'Description must be less than 400 characters'),
+  location: z.string().min(3, 'Location must be at least 3 characters').max(400, 'Location must be less than 400 characters'),
+  imageUrl: z.string(),
+  startDateTime: z.date(),
+  endDateTime: z.date(),
+  categoryId: z.string(),
+  price: z.string(),
+  isFree: z.boolean(),
+  url: z.string().url()
+})
+```
+
+
+## 3- On va créer un par un les champs du formulaire
+
+```
+npx shadcn-ui@latest add select
+npx shadcn-ui@latest add alert-dialog
+
+```
+
+on importe le Validator dans le EventForm
+```
+import { eventFormSchema } from "@/lib/validator"
+```
+on importe l'initial values de notre cnstante :
+```
+import { eventDefaultValues } from "@/constants"
+```
+
+le eventDefaultValues est comme ça :
+
+```
+export const eventDefaultValues = {
+  title: '',
+  description: '',
+  location: '',
+  imageUrl: '',
+  startDateTime: new Date(),
+  endDateTime: new Date(),
+  categoryId: '',
+  price: '',
+  isFree: false,
+  url: '',
+}
+```
+
+puis on modifie la form et la fonction onSubmit:
+
+```
+// 2. Define your form.
+const initialValues = eventDefaultValues
+
+const form = useForm<z.infer<typeof eventFormSchema>>({
+  resolver: zodResolver(eventFormSchema),
+  defaultValues: initialValues,
+})
+
+// 2. Define a submit handler.
+function onSubmit(values: z.infer<typeof eventFormSchema>) {
+  // Do something with the form values.
+  // ✅ This will be type-safe and validated.
+  console.log(values)
+}
+
+```
+
+ensuite, on peut créer maintenant un par un chaque champ du formulaire
+
+### a. title
+> components\shared\EventForm.tsx
+```
+<FormField
+  control={form.control}
+  name="title"
+  render={({ field }) => (
+    <FormItem className="w-full">
+      <FormControl>
+        <Input placeholder="Event title" {...field} className="input-field" />
+      </FormControl>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### b. categories
+> components\shared\EventForm.tsx
+```
+<FormField
+  control={form.control}
+  name="title"
+  render={({ field }) => (
+    <FormItem className="w-full">
+      <FormControl>
+        <Dropdown onChangeHandler={field.onChange} value={field.value} />
+      </FormControl>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+on va créer le composant Dropdown et puis l'importer dans le EventForm.
+
+> components\shared\EventForm.tsx
+```
+<FormField
+  control={form.control}
+  name="title"
+  render={({ field }) => (
+    <FormItem className="w-full">
+      <FormControl>
+        <Dropdown onChangeHandler={field.onChange} value={field.value} />
+      </FormControl>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+et le Dropdown est comme ceci :
+
+> components\shared\Dropdown.tsx
+```
+'use client'
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+import { ICategory } from "@/lib/mongoDb/models/category.model"
+import { startTransition, useState } from "react"
+import { Input } from "../ui/input"
+
+type DropdownProps = {
+  value?: string
+  onChangeHandler?: () => void
+}
+
+const Dropdown = ({ value, onChangeHandler }: DropdownProps) => {
+
+  const [categories, setCategories] = useState<ICategory[]>([])
+  const [newCategory, setNewCategory] = useState<string>("")
+
+  const handleAddCategory = () => {
+    // TODO: add new category
+  }
+
+  return (
+    <Select defaultValue={value} onValueChange={onChangeHandler}>
+      <SelectTrigger className="select-field">
+        <SelectValue placeholder="Category" />
+      </SelectTrigger>
+      <SelectContent>
+        {categories.length > 0 && categories.map((category) => (
+          <SelectItem key={category._id} value={category._id} className="select-item p-regular-14">
+            {category.name}
+          </SelectItem>
+        ))}
+
+        <AlertDialog>
+          <AlertDialogTrigger className="p-medium-16 flex w-full rounded-sm py-3 pl-8 text-primary-500 hover:bg-gray-100 focus:text-red-300">Open</AlertDialogTrigger>
+          <AlertDialogContent className="bg-gray-400">
+            <AlertDialogHeader>
+              <AlertDialogTitle>New Category</AlertDialogTitle>
+              <AlertDialogDescription>
+                <Input 
+                  type="text" 
+                  placeholder="Category name " 
+                  className="input-field mt-3" 
+                  onChange={(e) => setNewCategory(e.target.value)}
+                />
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => startTransition(handleAddCategory)}>Add</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+
+      </SelectContent>
+    </Select>
+
+  )
+}
+
+export default Dropdown
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
