@@ -1708,7 +1708,8 @@ export function FileUploader({ imageUrl, onFieldChange, setFiles }: FileUploader
 
 ### e. le champ location
 
-c'est le même refrain
+c'est le même refrain.
+
 > components\shared\EventForm.tsx
 ```
           <FormField
@@ -1736,6 +1737,108 @@ c'est le même refrain
               )}
             />
 ```
+
+
+### f. le champ date
+on va utiliser la librairie : react datepicker : https://www.npmjs.com/package/react-datepicker
+
+
+```
+npm install react-datepicker --save
+npm i --save-dev @types/react-datepicker
+```
+
+on l'importe dans le composant EventForm :
+```
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
+```
+
+et on l'implement le champ date comme ceci :
+
+```
+{/* start et end date*/}
+<div className="flex flex-col gap-5 md:flex-row">
+
+  <FormField
+    control={form.control}
+    name="startDateTime"
+    render={({ field }) => (
+      <FormItem className="w-full">
+
+        <FormControl>
+          <div className="flex-center h-[54px] w-full overflow-hidden rounded-full bg-grey-50 px-4 py-2 ">
+            <Image 
+              src={'/assets/icons/calendar.svg'}
+              alt="calendar"
+              width={24}
+              height={24}
+              className="filter-grey"
+            />
+            <p className="ml-3 whitespace-nowrap text-grey-600">Start Date</p>
+            
+            <DatePicker 
+              selected={field.value} 
+              onChange={(date: Date) => field.onChange(date)} 
+              showTimeSelect
+              timeInputLabel="Time:"
+              dateFormat={'dd:MM:yyyy h:mm aa'}
+              wrapperClassName="datePicker"
+              className="cursor-pointer"
+            />
+
+          </div>
+
+        </FormControl>
+
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+
+
+  <FormField
+    control={form.control}
+    name="endDateTime"
+    render={({ field }) => (
+      <FormItem className="w-full">
+
+        <FormControl>
+          <div className="flex-center h-[54px] w-full overflow-hidden rounded-full bg-grey-50 px-4 py-2 ">
+            <Image 
+              src={'/assets/icons/calendar.svg'}
+              alt="calendar"
+              width={24}
+              height={24}
+              className="filter-grey"
+            />
+            <p className="ml-3 whitespace-nowrap text-grey-600">Start Date</p>
+            
+            <DatePicker 
+              selected={field.value} 
+              onChange={(date: Date) => field.onChange(date)} 
+              showTimeSelect
+              timeInputLabel="Time:"
+              dateFormat={'dd:MM:yyyy h:mm aa'}
+              wrapperClassName="datePicker"
+              className="cursor-pointer"
+            />
+
+          </div>
+
+        </FormControl>
+
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+
+</div>
+```
+
+
+
 
 
 

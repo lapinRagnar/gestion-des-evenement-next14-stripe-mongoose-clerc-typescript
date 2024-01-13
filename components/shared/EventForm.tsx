@@ -26,6 +26,12 @@ import {FileUploader} from "@/components/shared/FileUploader"
 import { useState } from "react"
 import Image from "next/image"
 
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
+import { Date } from "mongoose"
+
+
 // 1. on fait ca pour la validation
 
 
@@ -61,6 +67,7 @@ const EventForm = ({ userId, type }: EventFormProps) => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
 
+        {/* champ title et category */}
         <div className="flex flex-col gap-5 md:flex-row">
 
           <FormField
@@ -80,7 +87,7 @@ const EventForm = ({ userId, type }: EventFormProps) => {
 
           <FormField
             control={form.control}
-            name="title"
+            name="categoryId"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormControl>
@@ -93,7 +100,8 @@ const EventForm = ({ userId, type }: EventFormProps) => {
           />
 
         </div>
-
+        
+        {/* champ description et image */}
         <div className="flex flex-col gap-5 md:flex-row">
           
           <FormField
@@ -129,7 +137,8 @@ const EventForm = ({ userId, type }: EventFormProps) => {
             />
 
         </div>
-
+        
+        {/* location */}
         <div className="flex flex-col gap-5 md:flex-row">
 
           <FormField
@@ -158,6 +167,87 @@ const EventForm = ({ userId, type }: EventFormProps) => {
             />
 
         </div>
+
+
+        {/* start et end date*/}
+        <div className="flex flex-col gap-5 md:flex-row">
+
+          <FormField
+            control={form.control}
+            name="startDateTime"
+            render={({ field }) => (
+              <FormItem className="w-full">
+
+                <FormControl>
+                  <div className="flex-center h-[54px] w-full overflow-hidden rounded-full bg-grey-50 px-4 py-2 ">
+                    <Image 
+                      src={'/assets/icons/calendar.svg'}
+                      alt="calendar"
+                      width={24}
+                      height={24}
+                      className="filter-grey"
+                    />
+                    <p className="ml-3 whitespace-nowrap text-grey-600">Start Date</p>
+                    
+                    <DatePicker 
+                      selected={field.value} 
+                      onChange={(date: Date) => field.onChange(date)} 
+                      showTimeSelect
+                      timeInputLabel="Time:"
+                      dateFormat={'dd:MM:yyyy h:mm aa'}
+                      wrapperClassName="datePicker"
+                      className="cursor-pointer"
+                    />
+
+                  </div>
+
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+
+          <FormField
+            control={form.control}
+            name="endDateTime"
+            render={({ field }) => (
+              <FormItem className="w-full">
+
+                <FormControl>
+                  <div className="flex-center h-[54px] w-full overflow-hidden rounded-full bg-grey-50 px-4 py-2 ">
+                    <Image 
+                      src={'/assets/icons/calendar.svg'}
+                      alt="calendar"
+                      width={24}
+                      height={24}
+                      className="filter-grey"
+                    />
+                    <p className="ml-3 whitespace-nowrap text-grey-600">Start Date</p>
+                    
+                    <DatePicker 
+                      selected={field.value} 
+                      onChange={(date: Date) => field.onChange(date)} 
+                      showTimeSelect
+                      timeInputLabel="Time:"
+                      dateFormat={'dd:MM:yyyy h:mm aa'}
+                      wrapperClassName="datePicker"
+                      className="cursor-pointer"
+                    />
+
+                  </div>
+
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+        </div>
+
+
 
 
         <Button type="submit">Submit</Button>
