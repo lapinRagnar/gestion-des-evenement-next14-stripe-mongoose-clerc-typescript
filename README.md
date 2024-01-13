@@ -217,7 +217,7 @@ npx shadcn-ui@latest add separator
 (voir le code)
 
 
-# III- le backend && database
+# III- le backend && database (mongoDB) à synchroniser avec la base de données de clerk (c'est du boulot - c chaud!)
 
 ## 1. mongoose - ORM pour se connecter au database
 https://mongoosejs.com/
@@ -905,6 +905,7 @@ ici :
 
 - maintenant on test sur notre localhost:3000 de créer un nouvel user et on verifie si l'user est ajouté aussi dans la base de donnée mongodb
 
+- Et voila ! Bravo !
 
 
 
@@ -913,18 +914,297 @@ ici :
 
 
 
-# IV- deploiement
+
+# IV- deploiement sur vercel
 
 - ojouter nouveau projet,
 - importer le projet du github
 - copier le .env
 
 
+# V- la page event - creation, modification, suppression d'un event 
+
+## 1- Create Event
+on crée la page : app/(root)/events/create/page.tsx
+
+avec le code suivant : 
+> app/(root)/events/create/page.tsx
+```
+
+const CreateEvent = () => {
+  return (
+    <>
+    
+      <section className="bg-primary-50 bg-dotted-pattern bg-cover bg-center py-5 md:py-10">
+        <h3 className="wrapper h3-bold text-center sm:text-left">Create Event</h3>
+      </section>
+
+      <div className="wrapper my-8">
+        <EventForm />
+      </div>
+    
+    </>
+  )
+}
+
+```
+
+on cree le composant <EventForm /> 👍, ** <font color="red"> cette forme va etre utiliser pour la création et la modification d'un event </font> **
+
+> app/(root)/events/create/components/EventForm.tsx
+```
+'use client'
+
+const EventForm = () => {
+  return (
+    <div>EventForm</div>
+  )
+}
+
+export default EventForm
+
+```
+
+maintenant on peut cliquer le lien event dans notre navbar "event" et ca marche
+
+
+### comment on recuper la session avec clerk 👍
+
+> app/(root)/events/create/page.tsx
+``` {.typescript .numberLines .lineAnchors highlight=[2,6-8]} 
+
+import EventForm from "@/components/shared/EventForm"
+import { auth } from "@clerk/nextjs"
+
+const CreateEvent = () => {
+
+  const { sessionClaims } = auth()
+  const userId = sessionClaims?.userId as string
+  console.log("sessionClaims", sessionClaims)
+  
+  return (
+    <>
+      <section className="bg-primary-50 bg-dotted-pattern bg-cover bg-center py-5 md:py-10">
+        <h3 className="wrapper h3-bold text-center sm:text-left">Create Event</h3>
+      </section>
+
+      <div className="wrapper my-8">
+        <EventForm />
+      </div>
+    </>
+  )
+}
+
+export default CreateEvent
+
+```
+
+une autre façon de recuperer le userId :
+
+```
+import { auth } from "@clerk/nextjs"
+..
+..
+....
+
+const { userId } : { userId: string | null } = auth()
+console.log("userId", userId);
+
+
+```
+
+on passe 2 props : userId et type dans EventForm : 
+
+```
+<EventForm userId={userId} type="Update" />
+```
+
+
+et on modifie, EventForm comme ceci :
+
+
+> app/(root)/events/create/components/EventForm.tsx
+```{.typescript .numberLines .lineAnchors highlight=[3-6,8,10]} 
+'use client'
+
+type EventFormProps = {
+  userId: string | null
+  type: "Create" | "Update"
+}
+
+const EventForm = ({ userId, type }: EventFormProps) => {
+  return (
+    <div>EventForm  {type} </div>
+  )
+}
+
+export default EventForm
+
+```
+
+ensuite on fait la même chose pour l'update :
+> app\(root)\events\[id]\update\page.tsx
+```
+import EventForm from "@/components/shared/EventForm"
+import { auth } from "@clerk/nextjs"
+
+const UpdateEvent = () => {
+
+/*   const { sessionClaims } = auth()
+  const userId = sessionClaims?.userId as string
+  console.log("sessionClaims et userId", sessionClaims, userId) */
+  
+  const { userId } : { userId: string | null } = auth()
+  console.log("userId", userId);
+  
+
+  return (
+    <>
+    
+      <section className="bg-primary-50 bg-dotted-pattern bg-cover bg-center py-5 md:py-10">
+        <h3 className="wrapper h3-bold text-center sm:text-left">Update Event</h3>
+      </section>
+
+      <div className="wrapper my-8">
+        <EventForm userId={userId} type="Update" />
+      </div>
+    
+    </>
+  )
+}
+
+export default UpdateEvent
+
+
+```
+
+
+maintenant, on va coder le plus dur c'est EventForm 🥉
+C'est le plus complexe code de cette application et de toutes les applications web :
+
+### Le EventForm
+
+on va utiliser la form de shadcn :
+https://ui.shadcn.com/docs/components/form
+
+
+#### installation de form
+
+```
+npx shadcn-ui@latest add form
+```
+
+#### 1- Create a form schema avec zod
+la doc: https://zod.dev/
+
+Define the shape of your form using a Zod schema.
+
+```
+import * as z from "zod"
+
+const formSchema = z.object({
+  username: z.string().min(2).max(50),
+})
+
+```
+
+on install ensuite l'input de shadcn :
+
+```
+npx shadcn-ui@latest add input
+
+```
+
+** En resumé on obtient ce code :**
+
+> app/(root)/events/create/components/EventForm.tsx
+```
+'use client'
+
+// 1. on fait ca
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+
+// 3.on install Button et Input. Et on importe comme ça
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+
+// 1. on fait ca
+const formSchema = z.object({
+  username: z.string().min(2).max(50),
+})
+
+type EventFormProps = {
+  userId: string | null
+  type: "Create" | "Update"
+}
+
+const EventForm = ({ userId, type }: EventFormProps) => {
+
+  // 2. Define your form.
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+    },
+  })
+
+  // 2. Define a submit handler.
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+    console.log(values)
+  }
+
+  return (
+
+    // 4. on dessine le formulaire
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="shadcn" {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display name.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">Submit</Button>
+      </form>
+    </Form>
+  )
+}
+
+export default EventForm
+```
 
 
 
 
-## le tuto
+
+
+
+
+
+## lien du tuto
 https://www.youtube.com/watch?v=zgGhzuBZOQg
 https://github.com/adrianhajdin/event_platform
 
