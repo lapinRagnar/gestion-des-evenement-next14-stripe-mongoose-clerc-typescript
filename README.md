@@ -1881,6 +1881,8 @@ et on l'implement le champ date comme ceci :
                     
                     <Checkbox 
                       id="isFree"
+                      onCheckedChange={field.onChange}
+                      checked={field.value}
                       className="mr-2 h-5 w-5 border-2 border-primary-500"
                     />
 
@@ -1937,6 +1939,15 @@ et on l'implement le champ date comme ceci :
   />
 ```
 
+
+
+## 4- actions et form submission 
+
+on essaie de remplir le formulaire maintenant et on verifie si quand on soumet le formulaire, on console log les données.
+
+et ca marche !
+
+![Alt text](images-pour-readme/formulaire1.png)
 
 
 
